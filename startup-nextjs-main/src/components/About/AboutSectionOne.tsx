@@ -56,8 +56,8 @@ const AboutSectionOne = () => {
   src="/images/about/about.png"
   alt="about-image"
   fill
-  sizes="(max-width: 1200px) 100vw, (max-width: 1800px) 75vw, 50vw"
-  className="mx-auto w-full max-w-[1200px] drop-shadow-three dark:hidden dark:drop-shadow-none lg:mr-0"
+  sizes="(max-width: 1500px) 100vw, (max-width: 1800px) 75vw, 50vw"
+  className="w-full max-w-[1300px] drop-shadow-three dark:hidden dark:drop-shadow-none lg:mr-0"
 />
 
 
@@ -65,7 +65,8 @@ const AboutSectionOne = () => {
                   src="/images/about/about.png"
                   alt="about-image"
                   fill
-                  className="mx-auto hidden max-w-full drop-shadow-three dark:block dark:drop-shadow-none lg:mr-0"
+                  sizes="(max-width: 1800px) 100vw, (max-width: 1800px) 75vw, 50vw"
+                  className="max-w-[2000px] drop-shadow-three dark:block dark:drop-shadow-none lg:mr-0"
                 />
               </div>
             </div>

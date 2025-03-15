@@ -1,5 +1,5 @@
 "use client";
-
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -97,14 +97,21 @@ const SigninPage = () => {
                 </div>
 
                 <div className="mb-6">
-                  <button
-                    type="submit" disabled={loading}
-                    className="w-full rounded-sm bg-primary px-6 py-3 text-base font-medium text-white transition-all duration-300 hover:bg-opacity-80"
-                  >
-                   
-   
-                  </button>
-                </div>
+  <button
+    type="submit"
+    disabled={loading}
+    className="w-full rounded-md bg-primary px-12 py-4 text-lg font-medium text-white transition-all duration-300 hover:bg-opacity-80"
+  >
+    Submit
+  </button>
+  <p className="text-center text-base font-medium text-body-color">
+    New User?{" "}
+    <Link href="/signup" className="text-primary hover:underline">
+      Sign Up
+    </Link>
+  </p>
+</div>
+
               </form>
             </div>
           </div>

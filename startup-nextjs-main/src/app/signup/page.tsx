@@ -214,8 +214,7 @@ const RegisterPage = () => {
             <div className="mb-6">
               <button
                 type="submit"
-                className="w-full rounded-sm bg-primary px-6 py-3 text-base font-medium text-white transition-all duration-300 hover:bg-opacity-80"
-              >
+                 className="w-full rounded-md bg-primary px-12 py-4 text-lg font-medium text-white transition-all duration-300 hover:bg-opacity-80">
                 Register
               </button>
             </div>
@@ -224,7 +223,7 @@ const RegisterPage = () => {
           <p className="text-center text-base font-medium text-body-color">
             Already have an account?{" "}
             <Link href="/signinpage" className="text-primary hover:underline">
-              Login here
+              Sign In
             </Link>
           </p>
         </div>
