@@ -34,6 +34,7 @@ const SigninPage = () => {
         // Store tokens in sessionStorage
         localStorage.setItem("token", data.access);
         localStorage.setItem("refresh", data.refresh);
+        localStorage.setItem("userId", data.user.id); 
 
         console.log("User Role:", data.role);
 

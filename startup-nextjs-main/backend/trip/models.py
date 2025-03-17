@@ -21,7 +21,6 @@ class CustomUser(AbstractUser):
 
     # Profile Image
     profile_image = models.ImageField(upload_to='profile_images/', blank=True, null=True)
-
     # Aadhaar Card for verification (upload document)
     aadhaar_card = models.ImageField(upload_to='aadhaar_cards/', blank=True, null=True)
 

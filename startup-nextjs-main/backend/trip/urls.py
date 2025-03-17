@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import RegisterView, VerifyOTPView, LoginView, ResendOTPView, LogoutView, ChangePasswordView,UserProfileView,FollowUserView, StoryListCreateView, StoryDetailView,LikeStoryView,CommentListCreateView,CommentDeleteView
+from .views import RegisterView, VerifyOTPView, LoginView, ResendOTPView, LogoutView, ChangePasswordView,UserProfileView,FollowUserView, StoryListCreateView,UserStoriesView,LikeStoryView,CommentListCreateView,CommentDeleteView,AllUsersWithStoriesView
 from django.conf import settings
 from django.conf.urls.static import static
 urlpatterns = [
@@ -12,9 +12,11 @@ urlpatterns = [
      path('profile/', UserProfileView.as_view(), name='user-profile'),
      path('follow/<int:user_id>/', FollowUserView.as_view(), name='follow-user'),
     path('stories/', StoryListCreateView.as_view(), name='story-list-create'),
-    path('stories/<int:pk>/', StoryDetailView.as_view(), name='story-detail'),
+     path('users_with_stories/', AllUsersWithStoriesView.as_view(), name='users-with-stories'),
+    path('stories/user/<int:user_id>/', UserStoriesView.as_view(), name='user-stories'),
     path('story/<int:story_id>/like/', LikeStoryView.as_view(), name='like-story'),
      path('story/<int:story_id>/comments/', CommentListCreateView.as_view(), name='comment-list-create'),
     path('comment/<int:pk>/delete/', CommentDeleteView.as_view(), name='comment-delete'),
+     
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -120,6 +120,10 @@ class LoginView(APIView):
         return Response({
             "message": "Login successful",
             "role": user_role,  # This is what frontend receives
+            "user": {  # ✅ Include user ID
+                "id": user.id,
+                "email": user.email,
+            },
             "access": str(refresh.access_token),
             "refresh": str(refresh),
         }, status=status.HTTP_200_OK)
@@ -300,35 +304,106 @@ class StoryListCreateView(View):
         story = Story.objects.create(user=user, text=text, image=image, video=video)
         return JsonResponse({"message": "Story created successfully", "story_id": story.id}, status=201)
 
-@method_decorator(csrf_exempt, name='dispatch')  
-class StoryDetailView(View):
-    def get(self, request, pk):
-        """Retrieve a specific story"""
-        story = get_object_or_404(Story, id=pk)
-        data = {"id": story.id, "first_name": story.user.first_name, "text": story.text, 
+@method_decorator(csrf_exempt, name='dispatch')
+class UserStoriesView(View):
+    def get(self, request, user_id):
+        """Retrieve all stories for a specific user"""
+        stories = Story.objects.filter(user_id=user_id)
+        
+        if not stories.exists():
+            return JsonResponse({"error": "No stories found for this user"}, status=404)
+
+        data = [
+            {
+                "id": story.id,
+                "first_name": story.user.first_name,
+                "text": story.text,
                 "image": story.image.url if story.image else None,
                 "video": story.video.url if story.video else None,
-                "created_at": story.created_at}
-        return JsonResponse(data)
+                "created_at": story.created_at,
+            }
+            for story in stories
+        ]
+        return JsonResponse(data, safe=False)
 
-    def delete(self, request, pk):
-        """Delete a story (Only owner can delete)"""
+    def delete(self, request, user_id):
+        """Delete all stories of a user (Only owner can delete)"""
         auth = JWTAuthentication()
         user, _ = auth.authenticate(request)
 
+        if user is None or user.id != user_id:
+            return JsonResponse({"error": "Authentication failed or unauthorized"}, status=401)
+
+        Story.objects.filter(user_id=user_id).delete()
+        return JsonResponse({"message": "All stories deleted successfully"}, status=200)
+ 
+
+from django.http import JsonResponse
+from django.views import View
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from .models import Story
+from trip.models import CustomUser
+from django.db.models import Q
+
+class AllUsersWithStoriesView(View):
+
+    def get(self, request):
+        """Retrieve profiles (photo, bio, name) and stories for all users who have stories, excluding the authenticated user."""
+        
+        # Authenticate user using JWT
+        auth = JWTAuthentication()
+        user, _ = auth.authenticate(request)
+        
         if user is None:
             return JsonResponse({"error": "Authentication failed. Invalid token."}, status=401)
 
-        story = get_object_or_404(Story, id=pk, user=user)
-        story.delete()
-        return JsonResponse({"message": "Story deleted successfully"}, status=200)
+        users_with_stories = CustomUser.objects.filter(
+       id__in=Story.objects.values("user_id").distinct()
+        ).exclude(Q(id=user.id) | Q(role="Admin"))  # 
+
+
+        # Prepare user profile data with their stories
+        profiles_data = []
+
+        for other_user in users_with_stories:
+            profile_data = {
+                "user_id": other_user.id,
+                "first_name": other_user.first_name,
+                "profile_photo": other_user.profile_image.url if other_user.profile_image else None,
+                "bio": other_user.bio if other_user.bio else None,
+                "stories": []
+            }
+
+            # Fetch stories for the user (excluding stories of the authenticated user)
+            stories = Story.objects.filter(user_id=other_user.id).order_by("-created_at")
+
+            profile_data["stories"] = [
+                {
+                    "id": story.id,
+                    "text": story.text,
+                    "image": story.image.url if story.image else None,
+                    "video": story.video.url if story.video else None,
+                    "created_at": story.created_at,
+                }
+                for story in stories
+            ]
+
+            profiles_data.append(profile_data)
+
+        if not profiles_data:
+            return JsonResponse({"message": "No users with stories found"}, status=404)
+
+        return JsonResponse(profiles_data, safe=False)
+
+
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 from django.views import View
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from .models import Like, Story
+from .models import Like, Story, CustomUser  # Ensure CustomUser is imported
 
 @method_decorator(csrf_exempt, name='dispatch')  # Disable CSRF for JWT authentication
 class LikeStoryView(View):
@@ -342,11 +417,17 @@ class LikeStoryView(View):
 
         story = get_object_or_404(Story, id=story_id)
 
+        # Prevent users from liking their own stories or admin stories
+        if story.user == user or story.user.role == "Admin":
+            return JsonResponse({"error": "You cannot like your own story or an admin's story."}, status=403)
+
         like, created = Like.objects.get_or_create(user=user, story=story)
         if not created:
             like.delete()
             return JsonResponse({"message": "You unliked the story"}, status=200)
+
         return JsonResponse({"message": "You liked the story"}, status=201)
+
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 from django.views import View
@@ -356,6 +437,15 @@ from django.views.decorators.http import require_http_methods
 from rest_framework_simplejwt.authentication import JWTAuthentication
 import json
 from .models import Comment, Story
+
+import json
+from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
+from django.views import View
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from .models import Comment, Story, CustomUser  # Ensure CustomUser is imported
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CommentListCreateView(View):
@@ -384,11 +474,17 @@ class CommentListCreateView(View):
                 return JsonResponse({"error": "Comment text is required"}, status=400)
 
             story = get_object_or_404(Story, id=story_id)
+
+            # Prevent users from commenting on their own stories or admin stories
+            if story.user == user or story.user.role == "Admin":
+                return JsonResponse({"error": "You cannot comment on your own story or an admin's story."}, status=403)
+
             comment = Comment.objects.create(user=user, story=story, text=text)
             return JsonResponse({"message": "Comment added successfully", "comment_id": comment.id}, status=201)
         
         except json.JSONDecodeError:
             return JsonResponse({"error": "Invalid JSON format"}, status=400)
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CommentDeleteView(View):

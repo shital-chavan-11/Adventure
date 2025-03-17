@@ -57,8 +57,16 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'trip',
     "rest_framework_simplejwt.token_blacklist",
+     'django_celery_beat',
 ]
 AUTH_USER_MODEL = 'trip.CustomUser'
+# settings.py
+
+# Redis as Celery Broker
+CELERY_BROKER_URL = "redis://localhost:6379/0"
+
+# Celery Result Backend (Optional)
+CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
